@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id            Int                     @id @default(autoincrement())
+  nome          String                  @db.VarChar(100)
+  email         String                  @unique @db.VarChar(150)
+  senhaHash     String                  @map("senha_hash") @db.VarChar(255)
+  perfil        String                  @default("vendedor")
+  status        String                  @default("ativo")
+  criadoEm      DateTime                @default(now()) @map("criado_em")
+  atualizadoEm  DateTime?               @map("atualizado_em")
+  vendas        Venda[]
+  movimentacoes EstoqueMovimentacao[]
+
+  @@map("usuarios")
+}
+
+model Categoria {
+  id           Int          @id @default(autoincrement())
+  nome         String       @unique @db.VarChar(100)
+  descricao    String?
+  criadoEm     DateTime     @default(now()) @map("criado_em")
+  produtos     Produto[]
+  sugestoesIa  SugestaoIA[]
+
+  @@map("categorias")
+}
+
+model Fornecedor {
+  id            Int       @id @default(autoincrement())
+  razaoSocial   String    @map("razao_social") @db.VarChar(150)
+  nomeFantasia  String?   @map("nome_fantasia") @db.VarChar(150)
+  cnpj          String?   @unique @db.VarChar(20)
+  telefone      String?   @db.VarChar(20)
+  email         String?   @db.VarChar(150)
+  endereco      String?   @db.VarChar(255)
+  cidade        String?   @db.VarChar(100)
+  estado        String?   @db.VarChar(50)
+  status        String    @default("ativo")
+  criadoEm      DateTime  @default(now()) @map("criado_em")
+  produtos      Produto[]
+
+  @@map("fornecedores")
+}
+
+model Cliente {
+  id           Int      @id @default(autoincrement())
+  nome         String   @db.VarChar(120)
+  cpf          String?  @unique @db.VarChar(20)
+  telefone     String?  @db.VarChar(20)
+  email        String?  @db.VarChar(150)
+  endereco     String?  @db.VarChar(255)
+  cidade       String?  @db.VarChar(100)
+  estado       String?  @db.VarChar(50)
+  status       String   @default("ativo")
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  vendas       Venda[]
+
+  @@map("clientes")
+}
+
+model Produto {
+  id                    Int                   @id @default(autoincrement())
+  nome                  String                @db.VarChar(150)
+  descricao             String?
+  sku                   String                @unique @db.VarChar(50)
+  codigoBarras          String?               @map("codigo_barras") @unique @db.VarChar(50)
+  categoriaId           Int                   @map("categoria_id")
+  fornecedorId          Int?                  @map("fornecedor_id")
+  precoCusto            Decimal               @map("preco_custo") @db.Decimal(10, 2)
+  precoVenda            Decimal               @map("preco_venda") @db.Decimal(10, 2)
+  estoqueAtual          Int                   @default(0) @map("estoque_atual")
+  estoqueMinimo         Int                   @default(0) @map("estoque_minimo")
+  unidadeMedida         String                @default("UN") @map("unidade_medida") @db.VarChar(20)
+  status                String                @default("ativo")
+  criadoEm              DateTime              @default(now()) @map("criado_em")
+  atualizadoEm          DateTime?             @map("atualizado_em")
+  categoria             Categoria             @relation(fields: [categoriaId], references: [id])
+  fornecedor            Fornecedor?           @relation(fields: [fornecedorId], references: [id])
+  vendaItens            VendaItem[]
+  estoqueMovimentacoes  EstoqueMovimentacao[]
+
+  @@map("produtos")
+}
+
+model Venda {
+  id              Int        @id @default(autoincrement())
+  clienteId       Int?       @map("cliente_id")
+  usuarioId       Int        @map("usuario_id")
+  dataVenda       DateTime   @default(now()) @map("data_venda")
+  subtotal        Decimal    @db.Decimal(10, 2)
+  desconto        Decimal    @db.Decimal(10, 2)
+  total           Decimal    @db.Decimal(10, 2)
+  formaPagamento  String     @map("forma_pagamento")
+  status          String     @default("paga")
+  observacoes     String?
+  cliente         Cliente?   @relation(fields: [clienteId], references: [id])
+  usuario         Usuario    @relation(fields: [usuarioId], references: [id])
+  vendaItens      VendaItem[]
+
+  @@map("vendas")
+}
+
+model VendaItem {
+  id            Int      @id @default(autoincrement())
+  vendaId       Int      @map("venda_id")
+  produtoId     Int      @map("produto_id")
+  quantidade    Int
+  precoUnitario Decimal  @map("preco_unitario") @db.Decimal(10, 2)
+  desconto      Decimal  @default(0) @db.Decimal(10, 2)
+  subtotal      Decimal  @db.Decimal(10, 2)
+  venda         Venda    @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+  produto       Produto  @relation(fields: [produtoId], references: [id])
+
+  @@map("venda_itens")
+}
+
+model EstoqueMovimentacao {
+  id         Int      @id @default(autoincrement())
+  produtoId  Int      @map("produto_id")
+  tipo       String
+  quantidade Int
+  motivo     String   @db.VarChar(100)
+  referencia String?  @db.VarChar(100)
+  usuarioId  Int?     @map("usuario_id")
+  criadoEm   DateTime @default(now()) @map("criado_em")
+  produto    Produto  @relation(fields: [produtoId], references: [id])
+  usuario    Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@map("estoque_movimentacoes")
+}
+
+model SugestaoIA {
+  id              Int        @id @default(autoincrement())
+  produtoNome     String     @map("produto_nome") @db.VarChar(150)
+  categoriaId     Int?       @map("categoria_id")
+  nivelTendencia  String     @map("nivel_tendencia")
+  justificativa   String
+  fonteDados      String?    @map("fonte_dados") @db.VarChar(150)
+  score           Decimal?   @db.Decimal(5, 2)
+  status          String     @default("pendente")
+  criadoEm        DateTime   @default(now()) @map("criado_em")
+  categoria       Categoria? @relation(fields: [categoriaId], references: [id])
+
+  @@map("sugestoes_ia")
+}
