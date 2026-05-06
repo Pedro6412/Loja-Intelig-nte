@@ -1,6 +1,15 @@
 ﻿# Loja Inteligente
 
+Uma loja cujo o objetivo e ser revolucionaria, sendo diferente das outras, e buscando a produtividade.
+
 Sistema completo de gestao de vendas para lojas com controle de produtos, categorias, clientes, usuarios, estoque, vendas e modulo de IA para sugestoes de produtos.
+
+## Participantes
+
+- Pedro Henrique
+- Lauro Marques
+- Guilherme Araujo
+- Marcos Eduardo
 
 ## Funcionalidades
 
@@ -145,5 +154,3 @@ Comportamento:
 - Use .env.example como modelo e configure seus segredos apenas no ambiente local/servidor.
 - Revogue e gere novamente qualquer chave de API que ja tenha aparecido em arquivo local ou commit.
 - Os dados de seed sao ficticios e devem ser trocados antes de uso real.
-
-
